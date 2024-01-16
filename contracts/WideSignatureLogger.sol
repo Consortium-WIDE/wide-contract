@@ -8,11 +8,11 @@ contract WideSignatureLogger {
         uint256 timestamp;
     }
 
-    // Mapping of hash to payload info
+    // Mapping of key to payload info
     mapping(bytes32 => PayloadInfo) public payloads;
 
     // Event for logging payload information
-    event PayloadLogged(bytes32 indexed payloadHash, uint256 timestamp);
+    event PayloadLogged(bytes32 indexed payloadKey, uint256 timestamp);
 
     // Modifier to restrict function access to only the contract owner
     modifier onlyOwner() {
@@ -24,14 +24,16 @@ contract WideSignatureLogger {
         owner = msg.sender;  // Set the contract creator as the owner
     }
 
-    function logPayload(bytes32 payloadHash, bytes memory signature) public onlyOwner {
-        require(payloadHash != bytes32(0), "Invalid input"); // Check that payloadHash is not empty
-        require(payloads[payloadHash].timestamp == 0, "Payload already logged");
-        payloads[payloadHash] = PayloadInfo(signature, block.timestamp);
-        emit PayloadLogged(payloadHash, block.timestamp);
+    function logPayload(bytes32 payloadKey, bytes memory signature) public onlyOwner {
+        require(payloadKey != bytes32(0), "Invalid input"); // Check that payloadKey is not empty
+        require(payloads[payloadKey].timestamp == 0, "Payload already logged");
+        payloads[payloadKey] = PayloadInfo(signature, block.timestamp);
+        emit PayloadLogged(payloadKey, block.timestamp);
     }
 
-    function getPayloadInfo(bytes32 payloadHash) public view returns (PayloadInfo memory) {
-        return payloads[payloadHash];
+    //TODO: logPayloadBatch
+    
+    function getPayloadInfo(bytes32 payloadKey) public view returns (PayloadInfo memory) {
+        return payloads[payloadKey];
     }
 }
