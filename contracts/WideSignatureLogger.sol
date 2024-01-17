@@ -3,9 +3,15 @@ pragma solidity ^0.8.0;
 
 contract WideSignatureLogger {
     address public owner;
+
     struct PayloadInfo {
         bytes signature;
         uint256 timestamp;
+    }
+
+    struct PayloadSignaturePair {
+        bytes32 payloadKey;
+        bytes signature;
     }
 
     // Mapping of key to payload info
@@ -24,14 +30,22 @@ contract WideSignatureLogger {
         owner = msg.sender;  // Set the contract creator as the owner
     }
 
-    function logPayload(bytes32 payloadKey, bytes memory signature) public onlyOwner {
-        require(payloadKey != bytes32(0), "Invalid input"); // Check that payloadKey is not empty
+    function logPayload(PayloadSignaturePair memory payloadPair) public onlyOwner {
+        bytes32 payloadKey = payloadPair.payloadKey;
+        bytes memory signature = payloadPair.signature;
+
+        require(payloadKey != bytes32(0), "Invalid input");
         require(payloads[payloadKey].timestamp == 0, "Payload already logged");
+
         payloads[payloadKey] = PayloadInfo(signature, block.timestamp);
         emit PayloadLogged(payloadKey, block.timestamp);
     }
-
-    //TODO: logPayloadBatch
+    
+    function logPayloadBatch(PayloadSignaturePair[] memory payloadPairs) public onlyOwner {
+        for (uint i = 0; i < payloadPairs.length; i++) {
+            logPayload(payloadPairs[i]);
+        }
+    }
     
     function getPayloadInfo(bytes32 payloadKey) public view returns (PayloadInfo memory) {
         return payloads[payloadKey];
