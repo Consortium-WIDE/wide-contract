@@ -32,7 +32,7 @@ describe("WideSignatureLogger", function () {
       const testHash = ethers.keccak256("0x1234");
       const testSignature = "0x" + "abcdef1234567890".repeat(8) + "ab";
 
-      await contract.connect(owner).logPayload(testHash, testSignature);
+      await contract.connect(owner).logPayload({ payloadKey: testHash, signature: testSignature });
 
       const loggedPayload = await contract.getPayloadInfo(testHash);
       expect(loggedPayload.signature).to.equal(testSignature);
@@ -43,7 +43,7 @@ describe("WideSignatureLogger", function () {
       const testHash = ethers.keccak256("0x1234");
       const testSignature = "0x" + "abcdef1234567890".repeat(8) + "ab";
 
-      await expect(contract.connect(addr1).logPayload(testHash, testSignature))
+      await expect(contract.connect(addr1).logPayload({ payloadKey: testHash, signature: testSignature }))
         .to.be.revertedWith("Only the contract owner can call this");
     });
 
@@ -51,8 +51,8 @@ describe("WideSignatureLogger", function () {
       const testHash = ethers.keccak256("0x1234");
       const testSignature = "0x" + "abcdef1234567890".repeat(8) + "ab";
 
-      await contract.connect(owner).logPayload(testHash, testSignature);
-      await expect(contract.connect(owner).logPayload(testHash, testSignature))
+      await contract.connect(owner).logPayload({ payloadKey: testHash, signature: testSignature });
+      await expect(contract.connect(owner).logPayload({ payloadKey: testHash, signature: testSignature }))
         .to.be.revertedWith("Payload already logged");
     });
 
@@ -61,7 +61,7 @@ describe("WideSignatureLogger", function () {
       const testSignature = "0x" + "abcdef1234567890".repeat(8) + "ab";
       const beforeTimestamp = (await ethers.provider.getBlock('latest'))?.timestamp;
 
-      await contract.connect(owner).logPayload(testHash, testSignature);
+      await contract.connect(owner).logPayload({ payloadKey: testHash, signature: testSignature });
 
       const payloadInfo = await contract.getPayloadInfo(testHash);
       expect(payloadInfo.signature).to.equal(testSignature);
@@ -73,7 +73,7 @@ describe("WideSignatureLogger", function () {
       const testHash = ethers.keccak256("0x1234");
       const testSignature = "0x" + "abcdef1234567890".repeat(8) + "ab";
 
-      const tx = await contract.connect(owner).logPayload(testHash, testSignature);
+      const tx = await contract.connect(owner).logPayload({ payloadKey: testHash, signature: testSignature });
       const receipt = await tx.wait();
       const eventLog = receipt?.logs[0] as EventLog;
       
@@ -85,7 +85,7 @@ describe("WideSignatureLogger", function () {
       const emptyHash = "0x" + "0".repeat(64); // Simulating an empty hash as a valid bytes32
       const testSignature = "0x" + "abcdef1234567890".repeat(8) + "ab";
 
-      await expect(contract.connect(owner).logPayload(emptyHash, testSignature))
+      await expect(contract.connect(owner).logPayload({ payloadKey: emptyHash, signature: testSignature }))
         .to.be.revertedWith("Invalid input"); // Replace with your contract's revert message
     });
     
@@ -93,7 +93,7 @@ describe("WideSignatureLogger", function () {
       const testHash = ethers.keccak256("0x1234");
       const testSignature = "0x" + "abcdef1234567890".repeat(8) + "ab";
     
-      const tx = await contract.connect(owner).logPayload(testHash, testSignature);
+      const tx = await contract.connect(owner).logPayload({ payloadKey: testHash, signature: testSignature });
       const receipt = await tx.wait();
       
       expect(receipt?.gasUsed).to.be.below(150000); // Example gas limit, adjust as needed
@@ -103,11 +103,43 @@ describe("WideSignatureLogger", function () {
       const testHash = ethers.keccak256("0x1234");
       const testSignature = "0x" + "abcdef1234567890".repeat(8) + "ab";
     
-      await contract.connect(owner).logPayload(testHash, testSignature);
+      await contract.connect(owner).logPayload({ payloadKey: testHash, signature: testSignature });
     
       // Attempt to log the same payload again
-      await expect(contract.connect(owner).logPayload(testHash, testSignature))
+      await expect(contract.connect(owner).logPayload({ payloadKey: testHash, signature: testSignature }))
         .to.be.revertedWith("Payload already logged"); // Your contract's revert message for this scenario
+    });
+    
+    it("Should log a single presentation", async function () {
+      const testPresentationKey = ethers.keccak256(ethers.toUtf8Bytes("presentationKey"));
+      const testJsonString = '{"title":"Test Presentation", "content":"This is a test"}';
+    
+      await contract.connect(owner).logPresentation(testPresentationKey, testJsonString);
+    
+      const presentationHistory = await contract.getPresentationHistory(testPresentationKey);
+    
+      expect(presentationHistory.length).to.equal(1);
+      expect(presentationHistory[0].jsonString).to.equal(testJsonString);
+      expect(presentationHistory[0].timestamp).to.be.at.least(1); // Assuming the timestamp is non-zero
+    });
+    
+    it("Should log multiple presentations under the same key", async function () {
+      const testPresentationKey = ethers.keccak256(ethers.toUtf8Bytes("presentationKey"));
+      const testJsonString1 = '{"title":"First Presentation", "content":"First test"}';
+      const testJsonString2 = '{"title":"Second Presentation", "content":"Second test"}';
+    
+      // Log the first presentation
+      await contract.connect(owner).logPresentation(testPresentationKey, testJsonString1);
+    
+      // Log the second presentation
+      await contract.connect(owner).logPresentation(testPresentationKey, testJsonString2);
+    
+      const presentationHistory = await contract.getPresentationHistory(testPresentationKey);
+    
+      expect(presentationHistory.length).to.equal(2);
+      expect(presentationHistory[0].jsonString).to.equal(testJsonString1);
+      expect(presentationHistory[1].jsonString).to.equal(testJsonString2);
+      expect(presentationHistory[1].timestamp).to.be.greaterThan(presentationHistory[0].timestamp);
     });
     
   });
