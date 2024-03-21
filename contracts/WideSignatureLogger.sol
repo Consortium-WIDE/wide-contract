@@ -3,11 +3,6 @@
 // Contract built by wid3.xyz for the wid3 platform.
 // Copyright (c) 2024
 
-//Alastria
-// pragma solidity ^0.5.0;
-// pragma experimental ABIEncoderV2;
-
-//Optimism
 pragma solidity ^0.8.19;
 
 contract WideSignatureLogger {
