@@ -3,8 +3,7 @@
 // Contract built by wid3.xyz for the wid3 platform.
 // Copyright (c) 2024
 
-pragma solidity ^0.5.0;
-pragma experimental ABIEncoderV2;
+pragma solidity ^0.8.19;
 
 contract WideSignatureLogger {
     address public owner;
@@ -30,7 +29,7 @@ contract WideSignatureLogger {
     event PayloadLogged(bytes32 indexed payloadKey, uint256 timestamp);
     event PresentationLogged(bytes32 indexed presentationKey, uint256 timestamp);
 
-    constructor() public {
+    constructor() {
         owner = msg.sender;
     }
 
